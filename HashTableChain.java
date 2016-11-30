@@ -1,177 +1,150 @@
+package kwhashmap;
 
 import java.util.Iterator;
 import java.util.LinkedList;
 
 public class HashTableChain<K, V> implements KWHashMap<K, V> {
 
-  //the table
-  private LinkedList<Entry<K, V>>[] table;
-  //the no.of keys inserted should be increamented
-  private int numkeys;
-  //the initial capacity of table
-  private static final int Capacity = 1;
-  //maximum load factor
-  private static final double Load_Threshold = 3.0;
+    //the table
+    private LinkedList<Entry<K, V>>[] table;
+    //the no.of keys inserted should be increamented
+    private int numkeys;
+    //the initial capacity of table
+    private int capacity = 31;
+    //maximum load factor
+    private double loadThreshold = 8.0;
 
-  private static class Entry<K, V> {
+    private static class Entry<K, V> {
 
-    private K key;
-    private V value;
+        private final K key;
+        private V value;
 
-    public Entry(K key, V value) {
-      this.key = key;
-      this.value = value;
+        public Entry(K key, V value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        public K getKey() {
+            return key;
+        }
+
+        public V getValue() {
+            return value;
+        }
+
+        public V setvalue(V val) {
+            V oldvalue = value;
+            value = val;
+            return oldvalue;
+        }
     }
 
-    public K getKey() {
-      return key;
+    public HashTableChain() {
+        this.table = new LinkedList[capacity];
     }
 
-    public V getValue() {
-      return value;
+    public HashTableChain(int capacity, double load) {
+        this.table = new LinkedList[capacity];
+        this.loadThreshold = load;
+        this.capacity = capacity;
     }
 
-    public V setvalue(V val) {
-      V oldvalue = value;
-      value = val;
-      return oldvalue;
+    public int hash(K key, int length) {
+        int index = key.hashCode() % length;
+        if (index < 0) {
+            index += length;
+        }
+        return index;
     }
-  }
 
-  public HashTableChain() {
-    table = new LinkedList[Capacity];
-  }
-
-  @Override
-  public V get(K key) {
-    System.out.println("hello world");
-    int index = key.hashCode() % table.length;
-    if (index < 0) {
-      index += table.length;
-    } else {
-      if (table[index] == null) {
+    @Override
+    public V get(K key) {
+        int index = hash(key, this.table.length);
+        if (this.table[index] == null) {
+            return null;
+        }
+        Iterator<Entry<K, V>> ir = this.table[index].listIterator(0);
+        while (ir.hasNext()) {
+            Entry t = ir.next();
+            if (t.key.equals(key)) {
+                return (V) t.getValue();
+            }
+        }
         return null;
-      }
     }
-    Iterator<Entry<K,V>> ir = table[index].listIterator();
-    while (ir.hasNext()) {
-      Entry t = ir.next();
-      if (t.key.equals(key)) {
-        return (V) t.getValue();
-      }
+    
+    private void rehash() {
+        Iterator<Entry<K, V>> ir;
+        LinkedList<Entry<K, V>>[] oldTable;
+        oldTable = this.table;
+        this.table = new LinkedList[capacity * 2 + 1];
+        
+        Entry<K,V> t;
+                
+        for (LinkedList<Entry<K, V>> table1 : this.table) {
+            if (table1 != null) {
+                ir = table1.listIterator(0);
+                while(ir.hasNext()) {
+                    t = ir.next();
+                    this.put(t.key, t.value);
+                }
+            }
+        }
     }
-    return null;
-  }
 
-  public boolean isEmpty() {
-    return table.length < 0;
-  }
+    @Override
+    public V put(K key, V value) {
+        int index = hash(key, this.table.length);
+        V val = null;
+        if (this.table[index] == null) {
+            // if no linked list add the key value to the linked list
+            LinkedList ll = new LinkedList();
+            ll.add(new Entry(key, value));
+            this.table[index] = ll;
+            this.numkeys = this.numkeys + 1;
+            
+            // if load is more than threshold rehash into a new table with more capacity
+            if ((this.numkeys / this.capacity) > this.loadThreshold) {
+                rehash();
+            }
+            return (V) val;
+        } else {
+            Iterator<Entry<K, V>> ir = this.table[index].listIterator(0);
+            while (ir.hasNext()) {
+                Entry t = ir.next();
+                // if key already exist update the value and return the old value
+                if (t.key.equals(key)) {
+                    val = (V) t.value;
+                    t.value = value;
+                    return val;
+                }
+            }
+            // if key does not exist then add the key, value to the linked list and return null
+            this.table[index].add(new Entry(key, value));
+            // if load is more than threshold rehash into a new table with more capacity
+            if ((this.numkeys / this.capacity) > this.loadThreshold) {
+                rehash();
+            }
+            return value;
+        }
+    }
+
+    @Override
+    public boolean isEmpty() {
+        int count = 0;
+        Iterator<Entry<K, V>> ir;
+        Entry<K,V> t;
+        for(LinkedList<Entry<K, V>> ll : this.table) {
+            if (ll != null) {
+                ir = ll.listIterator(0);
+                while(ir.hasNext()) {
+                    t = ir.next();
+                    if (t.key != null) {
+                        count = count + 1;
+                    }
+                }
+            }
+        }
+        return count < 1;
+    }
 }
-
-//        Object cur = table[i];
-//        while (cur != null) {
-//          if (key.equals(table[i].key)) {
-//            
-//          }
-//        }
-//
-//      }
-//    return null;
-//  }
-//}
-//  public HashTableChain() {
-//    table = new LinkedList[Capacity];
-//  }
-//
-//  public int hash(K key) {
-//    int index = key.hashCode() % table.length;
-//    if (index < 0) {
-//      index += table.length;
-//    } else {
-//      if (table[index] == null) {
-//        return 0;
-//      }
-//    }
-//    return 0;
-//  }
-//
-//  @Override
-//  public V get(K key) {
-//    int index = hash(key);
-//      System.out.println("helo");
-//    for (Entry<K, V> nextitem : table[index]) {
-//      if (nextitem.key.equals(key)) {
-//        return nextitem.value;
-//      }
-//    }
-//    return null;
-//  }
-//
-//  @Override
-//  public boolean isEmpty() {
-//    return (table.length < 0);
-//  }
-//
-//  @Override
-//  public V put(K key, V value) {
-//    int index = hash(key);
-//    for (Entry<K, V> nextitem : table[index]) {
-//      //if successful replace with new value 
-//      if (nextitem.key.equals(key)) {
-//        //if the key is same replace value for the key  
-//        V oldval = nextitem.value;
-//        nextitem.setvalue(value);
-//        return oldval;
-//      }
-//    }
-//    table[index].addFirst(new Entry(key, value));
-//    numkeys++;
-//    System.out.println("num of keys");
-//    System.out.println(numkeys);
-//    if (numkeys > (Load_Threshold * table.length)) {
-//      System.out.println("rehashing");
-//      rehash();
-//    }
-//    return null;
-//  }
-//
-//  @Override
-//  public V remove(K key) {
-//    int index = hash(key);
-//
-//    for (Entry<K, V> nextitem : table[index]) {
-//      //if search successful delete value 
-//      if (nextitem.key.equals(key)) {
-//        //if the key is same replace value for the key  
-//        V oldval = nextitem.value;
-//        nextitem.value = null;
-//        numkeys--;
-//        return oldval;
-//      }
-//    }
-//    return null;
-//  }
-//
-//  @Override
-//  public int size() {
-//    int count = 0;
-//    for (int i = 0; i < table.length; i++) {
-//      count++;
-//    }
-//    return count;
-//  }
-//
-//  public void rehash() {
-//    //saving reference of table in oldtable
-//    LinkedList<Entry<K, V>>[] oldtable = table;
-//    table = new LinkedList[2 * oldtable.length + 1];
-//    numkeys = 0;
-//    for(int i = 0; i < oldtable.length; i++) {
-//      for (Entry<K, V> nextitem : oldtable[i]) {
-//        if (nextitem.key != null) {
-//          put(nextitem.key, nextitem.value);
-//        }
-//      }
-//    }
-//  }
-//}
