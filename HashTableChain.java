@@ -129,8 +129,7 @@ public class HashTableChain<K, V> implements KWHashMap<K, V> {
         }
     }
 
-    @Override
-    public boolean isEmpty() {
+    public int size() {
         int count = 0;
         Iterator<Entry<K, V>> ir;
         Entry<K,V> t;
@@ -145,6 +144,10 @@ public class HashTableChain<K, V> implements KWHashMap<K, V> {
                 }
             }
         }
-        return count < 1;
+        return count;
+    }
+    
+    public boolean isEmpty() {
+        return (this.size() < 1);
     }
 }
