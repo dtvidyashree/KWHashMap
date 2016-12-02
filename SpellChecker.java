@@ -21,32 +21,58 @@ public class SpellChecker {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        // input file
-        File inputFileName = new File("./src/kwhashmap/input.txt").getAbsoluteFile();
+
+        HashTableChain dict = new HashTableChain(31, 0.8);
+        Dictionary d = new Dictionary(dict);
+        d.buildDictionary();
+        d.wordCorrections();
+        
+        dict.calcStats();
+        dict.printStats();
+  
+        System.out.println("=======================");
+        
+        HashTableChain dict1 = new HashTableChain(31, 3.0);
+        Dictionary d1 = new Dictionary(dict1);
+        d1.buildDictionary();
+        d1.wordCorrections();
+        
+        dict1.calcStats();
+        dict1.printStats();
+        
+    }
+}
+    
+ class Dictionary {
+     
+    HashTableChain dict; 
+    public Dictionary(HashTableChain dict) {
+        this.dict = dict;
+    }
+    
+    public HashTableChain buildDictionary() {
+        // read the dictionary and populate the hash table
         
         // dictionary file
         File dictionaryFileName = new File("./src/kwhashmap/dictionary.txt").getAbsoluteFile();
-        
-        // dictionary hash table object
-        HashTableChain dict = new HashTableChain();
-
-        System.out.println("Size before reading the dictionary");
-        System.out.println(dict.size());
-        
-        // read the dictionary and populate the hash table
+        // varaible to hold current line
         String sCurrentLine;
         try {
             BufferedReader br;
             br = new BufferedReader(new FileReader(dictionaryFileName));
             while ((sCurrentLine = br.readLine()) != null) {
-                dict.put(sCurrentLine, sCurrentLine);
+                String word = sCurrentLine.trim().toLowerCase();
+                this.dict.put(word, word);
             }
         } catch (IOException e) {
             System.out.println("Exception" + e);
         }
-
-        System.out.println("Size after reading the dictionary");
-        System.out.println(dict.size());
+        return this.dict;
+    }
+     
+    public void wordCorrections() {
+        // input file
+        File inputFileName = new File("./src/kwhashmap/input.txt").getAbsoluteFile();
         
         ArrayList al = new ArrayList();
         
@@ -54,20 +80,24 @@ public class SpellChecker {
         String aToz = "abcdefghijklmnopqrstuvwxyz";
         String[] aTozArray = aToz.split("");
         
+        // variable to hold line numbers of the input file
+        int lineNumber = 0;
         // read input and generate the non matching string replacements and check if it exists in the dictionary
+        
+        // read input file and process each line
         try {
+            String sCurrentLine;
             BufferedReader ipr;
             ipr = new BufferedReader(new FileReader(inputFileName));
             while ((sCurrentLine = ipr.readLine()) != null) {
-                if (dict.get(sCurrentLine) != null) {
+                lineNumber += 1;
+                if (this.dict.get(sCurrentLine) != null) {
                     // the word exists
-                    System.out.println("In the dictionary =========" + sCurrentLine);
                 } else {
                     // word does not exist
                     al.clear();
-                    System.out.println("Not in the dictionary =========== " + sCurrentLine);
+                    System.out.print(sCurrentLine + ", " + lineNumber + " :");
                     // rule 1: change each letter from a to z
-                    //System.out.println("Rule 1 ========================");
                     String tempStr;
                     String[] strArray;
                     for (int i = 0; i < sCurrentLine.length(); i++) {
@@ -79,12 +109,10 @@ public class SpellChecker {
                                 tempStr += str;
                             }
                             al.add(tempStr);
-                            //System.out.println(tempStr);
                         }
                     }
 
                     // rule 2: swap adjscent letters
-                    //System.out.println("Rule 2 =========================");
                     String tempSwapStr;
                     for (int i = 0; i < sCurrentLine.length() - 1; i++) {
                         strArray = sCurrentLine.split("");
@@ -96,11 +124,9 @@ public class SpellChecker {
                             tempStr += str;
                         }
                         al.add(tempStr);
-                        //System.out.println(tempStr);
                     }
 
                     // rule 3: remove each letter
-                    //System.out.println("Rule 3 =========================");
                     for (int i = 0; i < sCurrentLine.length(); i++) {
                         strArray = sCurrentLine.split("");
                         strArray[i] = "";
@@ -109,16 +135,17 @@ public class SpellChecker {
                             tempStr += str;
                         }
                         al.add(tempStr);
-                        //System.out.println(tempStr);
                     }
                     
-                    // check which generated replacements exists in the dictionary
-                    System.out.println("Valid replacements for " + sCurrentLine);
+                    // check which of the generated replacements exists in the dictionary
+                    // and print them as replacements
                     for (int i = 0; i < al.size(); i++) {
-                        if (dict.get(al.get(i)) != null) {
-                            System.out.println(al.get(i));
+                        if (this.dict.get(al.get(i)) != null) {
+                            System.out.print(al.get(i));
+                            System.out.print(", ");
                         }
                     }
+                    System.out.println("");
                 }
             }
         } catch (IOException e) {
